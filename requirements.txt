@@ -1,0 +1,6 @@
+moviepy
+SpeechRecognition
+PyAudio  # Dependency for SpeechRecognition
+pydub
+requests
+whisper
