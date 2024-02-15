@@ -1,6 +1,6 @@
 import os
 import subprocess
-from datetime import timedelta  # Import timedelta
+from datetime import timedelta
 from moviepy.editor import VideoFileClip, CompositeVideoClip, TextClip
 from moviepy.video.tools.subtitles import SubtitlesClip
 import whisper
@@ -10,7 +10,6 @@ OUTPUT_VID = "output.mp4"
 TEMP_FILE = "temp.mp3"
 
 def generate_subtitles(video_path):
-    # Check if ffmpeg is installed
     def check_ffmpeg():
         try:
             result = subprocess.run(['ffmpeg', '-version'], capture_output=True, text=True)
@@ -26,7 +25,6 @@ def generate_subtitles(video_path):
         print("Video file does not exist.")
         return
 
-    # Extract audio from video
     video = VideoFileClip(video_path)
     if video.audio:
         video.audio.write_audiofile(TEMP_FILE, codec="mp3")
@@ -34,7 +32,6 @@ def generate_subtitles(video_path):
         print("Video has no audio.")
         return
 
-    # Generate subtitles using Whisper
     model = whisper.load_model("base")
     transcribe = model.transcribe(audio=TEMP_FILE, fp16=False)
     segments = transcribe["segments"]
@@ -48,11 +45,24 @@ def generate_subtitles(video_path):
             segment = f"{segment_id}\n{start} --> {end}\n{text[1:] if text[0] == ' ' else text}\n\n"
             f.write(segment)
 
-    # Attach subtitles to video
-    subtitles = SubtitlesClip(OUTPUT_SRT, lambda txt: TextClip(txt, font="Arial", fontsize=24, color="white", bg_color="black"))
-    video_with_subtitles = CompositeVideoClip([video, subtitles.set_position(("center", 0.95), relative=True)])
+    # Styling for subtitles
+    def style_text(txt):
+        return TextClip(
+            txt, font="Verdana", fontsize=36, color="white", 
+            stroke_color="black", stroke_width=1, align="center", 
+            kerning=5, interline=-2
+        )
+
+    subtitles = SubtitlesClip(OUTPUT_SRT, style_text)
+    video_with_subtitles = CompositeVideoClip(
+        [video, subtitles.set_position(("center", "bottom"), relative=True)]
+    )
     video_with_subtitles.write_videofile(OUTPUT_VID, codec="libx264")
 
-    print(f"Subtitles generated and attached to {OUTPUT_VID}")
+    # Delete temporary files
+    if os.path.exists(TEMP_FILE):
+        os.remove(TEMP_FILE)
+    if os.path.exists(OUTPUT_SRT):
+        os.remove(OUTPUT_SRT)
 
-# Optional: You can also provide a function to install required libraries if they are not installed.
+    print(f"Subtitles generated and attached to {OUTPUT_VID}. Temporary files removed.")

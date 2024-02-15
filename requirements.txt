@@ -4,3 +4,5 @@ PyAudio  # Dependency for SpeechRecognition
 pydub
 requests
 whisper
+openai-whisper
+pygame
